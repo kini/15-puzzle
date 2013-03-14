@@ -2,6 +2,10 @@ import Test.HUnit
 import Data.List
 import Puzzle
 
+-- Here are a few tests. Until the AI is completed, there's not a whole
+-- lot to test, but here are some tests of the puzzle generation
+-- functions, for what it's worth.
+
 evenQ :: Ord a => [a] -> Bool
 evenQ = (==0) . flip mod 2 . inversions
   where

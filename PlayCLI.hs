@@ -5,12 +5,16 @@ import System.Environment
 
 import Puzzle
 
+-- This function is the main interaction loop in which the player makes
+-- moves and observes the results of those moves.
 playWithUser :: Vty -> Board -> String -> IO ()
 playWithUser vty b@(Board i v) message = do
   release_display $ terminal vty
   reserve_display $ terminal vty
-  refresh vty
   putStrLn message
+  putStrLn (if b == perfectBoard
+            then "Note: This board is solved"
+            else "")
   print b
   e <- next_event vty
   let continue m = do
@@ -26,6 +30,7 @@ playWithUser vty b@(Board i v) message = do
     EvKey KRight [] -> continue MvR
     _ -> playWithUser vty b "Invalid command"
 
+-- Here is the main function, which calls the interaction loop.
 main = do
   args <- getArgs
   let boardID = case args of

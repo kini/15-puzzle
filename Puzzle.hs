@@ -1,14 +1,11 @@
 module Puzzle where
 
-import Control.Monad
 import Data.Maybe
 import Data.List
 import Data.Vector ((//), (!), Vector)
 import qualified Data.Vector as V
 import Data.Graph.AStar
--- import qualified Data.Heap as H
 import qualified Data.Set  as S
-import System.Timeout
 
 -- Backwards recursive Steinhaus-Johnson-Trotter algorithm
 nthPermutation :: Int -> [a] -> [a]
@@ -134,46 +131,51 @@ possibleMoves' :: Board -> [Restriction] -> [Move]
 possibleMoves' b@(Board i v) rs
   = filter (\move -> and (map ($ makeMove move b) rs)) $ possibleMoves b
 
-findShiftSequence :: (Int, Move) -> Board -> [Restriction] ->
-                     Maybe (Board, [Move])
-findShiftSequence (pos, direction) b rs
-  | not $ canMoveFrom pos direction = Nothing
-  | isNothing res = Nothing
-  | otherwise =
-    Just (last boardSeq, map fromJust $
-                         zipWith diffBoards boardSeq (tail boardSeq))
-  where
-    res = aStar getAdj (curry $ const 1) heur doneQ b
-    getAdj b0 = S.fromList $ map (flip makeMove b0) $ possibleMoves' b0 rs'
-    heur (Board i _) = manhattan i pos
-    doneQ (Board i _) = pos + moveOffset direction == i
-    rs' = fixPos b pos : rs
+-- findShiftSequence :: (Int, Move) -> Board -> [Restriction] ->
+--                      Maybe (Board, [Move])
+-- findShiftSequence (pos, direction) b rs
+--   | not $ canMoveFrom pos direction = Nothing
+--   | isNothing res = Nothing
+--   | otherwise =
+--     Just (last boardSeq, map fromJust $
+--                          zipWith diffBoards boardSeq (tail boardSeq))
+--   where
+--     res = aStar getAdj (curry $ const 1) heur doneQ b
+--     getAdj b0 = S.fromList $ map (flip makeMove b0) $ possibleMoves' b0 rs'
+--     heur (Board i _) = manhattan i pos
+--     doneQ (Board i _) = pos + moveOffset direction == i
+--     rs' = fixPos b pos : rs
+-- 
+--     Just res' = res
+--     finalBoard = makeMove (moveOpposite direction) (last res')
+--     boardSeq = b : res' ++ [finalBoard]
 
-    Just res' = res
-    finalBoard = makeMove (moveOpposite direction) (last res')
-    boardSeq = b : res' ++ [finalBoard]
+-- findMigration :: Int -> Int -> Board -> [Restriction] ->
+--                  Maybe (Board, [Move])
+-- findMigration piece dest b rs
+--   | undefined = undefined
+--   where
+--     res :: Maybe [(Board, [Move])]
+--     res = aStar getAdj (curry $ const 1) heur doneQ (b, [])
+--     -- getAdj b0 = S.fromList $ filter 
+--     getAdj = undefined
+--     heur (Board _ v, _) = manhattan (fromJust . fromJust $ V.find (==Just piece) v) dest
+--     doneQ (Board _ v, _) = v ! dest == Just piece
 
-findMigration :: Int -> Int -> Board -> [Restriction] ->
-                 Maybe (Board, [Move])
-findMigration piece dest b rs
-  | undefined = undefined
-  where
-    res :: Maybe [(Board, [Move])]
-    res = aStar getAdj (curry $ const 1) heur doneQ (b, [])
-    -- getAdj b0 = S.fromList $ filter 
-    getAdj = undefined
-    heur (Board _ v, _) = manhattan (fromJust . fromJust $ V.find (==Just piece) v) dest
-    doneQ (Board _ v, _) = v ! dest == Just piece
-
--- findShiftSequence :: (Int, Move) -> Board -> [Restriction] -> Maybe [(Move, Board)]
+-- findShiftSequence :: (Int, Move) -> Board -> [Restriction] ->
+--                      Maybe [(Move, Board)]
 -- findShiftSequence (pos, direction) b@(Board i _) rs
 --   | canMoveFrom pos direction && isJust res
---     = Just $ reverse $ (moveOpposite direction, makeMove (moveOpposite direction) (snd $ head (fromJust res))) : fromJust res
+--     = Just $ reverse $ (moveOpposite direction,
+--                         makeMove (moveOpposite direction)
+--                                  (snd $ head (fromJust res))
+--                        ) : fromJust res
 --   | otherwise = Nothing
 --   where
 --     rs' = fixPos b pos : rs
 --     res = findShiftSequence' b [i] []
---     findShiftSequence' :: Board -> [Int] -> [(Move, Board)] -> Maybe [(Move, Board)]
+--     findShiftSequence' :: Board -> [Int] -> [(Move, Board)] ->
+--                           Maybe [(Move, Board)]
 --     findShiftSequence' b@(Board i _) seen moves
 --       | i == pos + moveOffset direction
 --         = Just moves
@@ -183,17 +185,18 @@ findMigration piece dest b rs
 --         = Just ((m, b):moves')
 --       where
 --         res = find (isJust . snd) $
---               [ (m, findShiftSequence' (makeMove m b) (i:seen) ((m, makeMove m b):moves))
+--               [ (m, findShiftSequence' (makeMove m b) (i:seen)
+--                     ((m, makeMove m b):moves))
 --               | m <- possibleMoves' b rs'
 --               , not ((i + moveOffset m) `elem` seen)
 --               ]
 --         Just (m, Just moves') = res
 
-heuristic :: Int -> Board -> Board -> Int
-heuristic limit (Board _ v1) (Board _ v2) = sum $ zipWith manhattan l r
-  where
-    l = map (fromJust . flip V.elemIndex v1 . Just) [1..limit]
-    r = map (fromJust . flip V.elemIndex v2 . Just) [1..limit]
+-- heuristic :: Int -> Board -> Board -> Int
+-- heuristic limit (Board _ v1) (Board _ v2) = sum $ zipWith manhattan l r
+--   where
+--     l = map (fromJust . flip V.elemIndex v1 . Just) [1..limit]
+--     r = map (fromJust . flip V.elemIndex v2 . Just) [1..limit]
 
 --solve :: Board -> [Move]
 --solve cur = solve' (cur, [], [])
@@ -212,22 +215,3 @@ heuristic limit (Board _ v1) (Board _ v2) = sum $ zipWith manhattan l r
 --main = do
 --  x <- readLn
 --  print $ solve $ makeBoardFromID x
-
--- And here's the search function
---astar :: Board -> (Board -> Bool) -> (Board -> [(Move, Board)]) -> 
---astar start isEnd getOuts cost heuristic
-
--- astar start succ end cost heur
---     = astar' (S.singleton start) (Q.singleton (heur start) [start])
---  where
---    astar' seen q
---      | Q.null q = error "No Solution."
---      | end n = next
---      | othewise = astar' seen' q'
---      where
---        ((c,next), dq) = Q.deleteFindMin q
---        n = head next
---        succs = filter (`S.notMember` seen) $ succ n
---        costs = map ((+ c) . (subtract $ heur n) . liftM2 (+) cost heur) succs
---        q' = dq `Q.union` Q.fromList (zip costs (map (:next) succs))
---        seen' = seen `S.union` S.fromList succs
