@@ -4,6 +4,8 @@ import Data.Maybe
 import Data.List
 import Data.Vector ((//), (!), Vector)
 import qualified Data.Vector as V
+import qualified Data.Set as S
+import Data.Graph.AStar
 
 -- Backwards recursive Steinhaus-Johnson-Trotter algorithm (see
 -- writeup.rst for more info)
@@ -28,6 +30,9 @@ nthPermutation n l@(x:xs) = insertZigZag n x $
 -- The main board data type. It's stored as a one dimensional vector
 -- of Maybe Int values.
 data Board = Board Int (Vector (Maybe Int)) deriving (Eq)
+
+instance Ord Board where
+  compare (Board _ v1) (Board _ v2) = compare v1 v2
 
 -- This allows us to print boards easily. The code looks ugly but the
 -- display comes out looking nice :)
@@ -163,36 +168,36 @@ possibleMoves' b@(Board i v) rs
 -- See writeup.rst for more info about the following stuff, which
 -- doesn't work yet.
 
--- findShiftSequence :: (Int, Move) -> Board -> [Restriction] ->
---                      Maybe (Board, [Move])
--- findShiftSequence (pos, direction) b rs
---   | not $ canMoveFrom pos direction = Nothing
---   | isNothing res = Nothing
---   | otherwise =
---     Just (last boardSeq, map fromJust $
---                          zipWith diffBoards boardSeq (tail boardSeq))
---   where
---     res = aStar getAdj (curry $ const 1) heur doneQ b
---     getAdj b0 = S.fromList $ map (flip makeMove b0) $ possibleMoves' b0 rs'
---     heur (Board i _) = manhattan i pos
---     doneQ (Board i _) = pos + moveOffset direction == i
---     rs' = fixPos b pos : rs
--- 
---     Just res' = res
---     finalBoard = makeMove (moveOpposite direction) (last res')
---     boardSeq = b : res' ++ [finalBoard]
+findShiftSequence :: (Int, Move) -> Board -> [Restriction] ->
+                     Maybe (Board, [Move])
+findShiftSequence (pos, direction) b rs
+  | not $ canMoveFrom pos direction = Nothing
+  | isNothing res = Nothing
+  | otherwise =
+    Just (last boardSeq, map fromJust $
+                         zipWith diffBoards boardSeq (tail boardSeq))
+  where
+    res = aStar getAdj (curry $ const 1) heur doneQ b
+    getAdj b0 = S.fromList $ map (flip makeMove b0) $ possibleMoves' b0 rs'
+    heur (Board i _) = manhattan i pos
+    doneQ (Board i _) = pos + moveOffset direction == i
+    rs' = fixPos b pos : rs
 
--- findMigration :: Int -> Int -> Board -> [Restriction] ->
---                  Maybe (Board, [Move])
--- findMigration piece dest b rs
---   | undefined = undefined
---   where
---     res :: Maybe [(Board, [Move])]
---     res = aStar getAdj (curry $ const 1) heur doneQ (b, [])
---     -- getAdj b0 = S.fromList $ filter 
---     getAdj = undefined
---     heur (Board _ v, _) = manhattan (fromJust . fromJust $ V.find (==Just piece) v) dest
---     doneQ (Board _ v, _) = v ! dest == Just piece
+    Just res' = res
+    finalBoard = makeMove (moveOpposite direction) (last res')
+    boardSeq = b : res' ++ [finalBoard]
+
+findMigration :: Int -> Int -> Board -> [Restriction] ->
+                 Maybe (Board, [Move])
+findMigration piece dest b rs
+  | undefined = undefined
+  where
+    res :: Maybe [(Board, [Move])]
+    res = aStar getAdj (curry $ const 1) heur doneQ (b, [])
+    -- getAdj b0 = S.fromList $ filter 
+    getAdj = undefined
+    heur (Board _ v, _) = manhattan (fromJust . fromJust $ V.find (==Just piece) v) dest
+    doneQ (Board _ v, _) = v ! dest == Just piece
 
 -- findShiftSequence :: (Int, Move) -> Board -> [Restriction] ->
 --                      Maybe [(Move, Board)]
@@ -224,11 +229,11 @@ possibleMoves' b@(Board i v) rs
 --               ]
 --         Just (m, Just moves') = res
 
--- heuristic :: Int -> Board -> Board -> Int
--- heuristic limit (Board _ v1) (Board _ v2) = sum $ zipWith manhattan l r
---   where
---     l = map (fromJust . flip V.elemIndex v1 . Just) [1..limit]
---     r = map (fromJust . flip V.elemIndex v2 . Just) [1..limit]
+heuristic :: Int -> Board -> Board -> Int
+heuristic limit (Board _ v1) (Board _ v2) = sum $ zipWith manhattan l r
+  where
+    l = map (fromJust . flip V.elemIndex v1 . Just) [1..limit]
+    r = map (fromJust . flip V.elemIndex v2 . Just) [1..limit]
 
 --solve :: Board -> [Move]
 --solve cur = solve' (cur, [], [])

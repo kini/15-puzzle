@@ -330,7 +330,7 @@ depth-first search. Unfortunately I didn't have time to do this.
 Player interaction in the terminal
 ----------------------------------
 
-I used the Graphics.Vty library (provided by the `vty`_ package on
+I used the `Graphics.Vty` library (provided by the `vty`_ package on
 hackage) to make a terminal interface for my 15-puzzle game. The main
 loop looks like this::
 
@@ -358,7 +358,7 @@ loop looks like this::
 >     _ -> playWithUser vty b "Invalid command"
 
 Not really that much to say here, I suppose. There is an interesting UI
-library built on top of Graphics.Vty, by the way, called `vty-ui`_.
+library built on top of `Graphics.Vty`, by the way, called `vty-ui`_.
 Looks interesting.
 
 .. _vty: http://hackage.haskell.org/package/vty
